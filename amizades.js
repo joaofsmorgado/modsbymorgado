@@ -21,7 +21,7 @@ if (typeof DEBUG !== 'boolean') DEBUG = false;
 var scriptConfig = {
     scriptData: {
         prefix: 'friendRequest',
-        name: 'Pedidos de Amizade em Massa by',
+        name: 'Pedidos de Amizade em Massa',
         version: 'v1.0.4',
         author: 'RedAlert e modificado por João Morgado',
         authorUrl: 'https://twscripts.dev/',
@@ -30,7 +30,7 @@ var scriptConfig = {
     },
     translations: {
         en_DK: {
-            'Friend Request': 'Pedidos de Amizade em Massa',
+            'Friend Request': 'Friend Request',
             Help: 'Suporte',
             'Fetching world data ...': 'A recolher a informação do mundo...',
             Rank: 'Posição',
