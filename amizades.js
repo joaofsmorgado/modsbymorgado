@@ -76,18 +76,27 @@ $.getScript(
         // Initialize main script logic
         async function initMain() {
             const players = await twSDK.worldDataAPI('player');
+
+            // Obter informação das tribos
+            const tribes = await twSDK.worldDataAPI('ally');
+
             const currentFriends = fetchCurrentFriendsList();
 
             // sort and filter
             const sortedPlayersByRank = players.sort((a, b) => a[5] - b[5]);
+
             const currentFriendIds = currentFriends.map((friend) =>
                 parseInt(friend.id)
             );
+
             const filteredPlayers = sortedPlayersByRank.filter((player) =>
                 player.push(currentFriendIds.includes(parseInt(player[0])))
             );
 
-            const playersTable = buildPlayersTable(filteredPlayers);
+            const playersTable = buildPlayersTable(
+                filteredPlayers,
+                tribes
+            );
 
             const content = `
                 <div class="ra-mb15 ra-mh400">
@@ -117,17 +126,24 @@ $.getScript(
         function onClickAddFriend() {
             jQuery('.btn-add-friend').on('click', function () {
                 const addFriendLink = jQuery(this).attr('data-href');
+
                 jQuery(this).addClass('btn-confirm-yes');
-                jQuery('.btn-add-friend').attr('disabled', 'disabled');
+
+                jQuery('.btn-add-friend').attr(
+                    'disabled',
+                    'disabled'
+                );
+
                 setTimeout(() => {
                     jQuery('.btn-add-friend').removeAttr('disabled');
                 }, twSDK.delayBetweenRequests);
+
                 jQuery.get(addFriendLink);
             });
         }
 
         // Helper: Build the players table
-        function buildPlayersTable(players) {
+        function buildPlayersTable(players, tribes) {
             let playersTable = `
                 <table class="ra-table" width="100%">
                     <thead>
@@ -144,31 +160,71 @@ $.getScript(
             `;
 
             players.forEach((player) => {
-                const [id, name, ally, villages, points, rank, existing] =
-                    player;
+                const [
+                    id,
+                    name,
+                    tribeId,
+                    villages,
+                    points,
+                    rank,
+                    existing
+                ] = player;
+
+                /*
+                 * O player.txt fornece o ID da tribo.
+                 * Aqui procuramos esse ID no ally.txt.
+                 */
+                const tribe = tribes.find(
+                    (tribe) =>
+                        parseInt(tribe[0]) === parseInt(tribeId)
+                );
+
+                /*
+                 * No ally.txt:
+                 * [0] = ID da tribo
+                 * [1] = Nome da tribo
+                 * [2] = Tag da tribo
+                 */
+                const tribeName = tribe ? tribe[1] : '';
+
                 const hash = game_data.csrf;
+
                 if (name !== undefined && id) {
                     playersTable += `
-                        <tr class="${existing ? 'ra-existing-player' : ''}">
+                        <tr class="${
+                            existing ? 'ra-existing-player' : ''
+                        }">
                             <td>${rank}</td>
+
                             <td class="ra-tal">
-                                <a href="/game.php?screen=info_player&id=${id}" target="_blank" rel="noopener noreferrer">
+                                <a href="/game.php?screen=info_player&id=${id}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
                                     ${twSDK.cleanString(name)}
                                 </a>
                             </td>
+
                             <td>
-                                ${twSDK.cleanString(ally)}
+                                ${
+                                    tribeName
+                                        ? twSDK.cleanString(tribeName)
+                                        : '-'
+                                }
                             </td>
+
                             <td>
                                 ${twSDK.formatAsNumber(villages)}
                             </td>
+
                             <td>
                                 ${twSDK.formatAsNumber(points)}
                             </td>
+
                             <td>
                                 <span class="btn btn-add-friend ${
                                     existing ? 'btn-disabled' : ''
-                                }" data-href="/game.php?screen=info_player&id=${id}&action=add_friend&h=${hash}">
+                                }"
+                                data-href="/game.php?screen=info_player&id=${id}&action=add_friend&h=${hash}">
                                     ${twSDK.tt('Add as friend')}
                                 </span>
                             </td>
@@ -189,20 +245,30 @@ $.getScript(
             const currentFriendsTable = jQuery(
                 '#content_value > table:nth-child(6) > tbody > tr'
             ).not(':eq(0)');
+
             const friendRequestsTable = jQuery(
                 '#content_value > table:nth-child(8) > tbody > tr'
             ).not(':eq(0)');
+
             const incomingFriendsTable = jQuery(
                 '#content_value > table:nth-child(10) > tbody > tr'
             ).not(':eq(0)');
 
             currentFriendsTable.each(function () {
-                const playerName = jQuery(this).find('td:eq(1)').text().trim();
-                const playerLink = jQuery(this).find('td:eq(1) a').attr('href');
+                const playerName = jQuery(this)
+                    .find('td:eq(1)')
+                    .text()
+                    .trim();
+
+                const playerLink = jQuery(this)
+                    .find('td:eq(1) a')
+                    .attr('href');
+
                 const playerId = twSDK.getParameterByName(
                     'id',
                     window.location.origin + playerLink
                 );
+
                 currentFriends.push({
                     id: parseInt(playerId),
                     name: playerName,
@@ -210,12 +276,20 @@ $.getScript(
             });
 
             friendRequestsTable.each(function () {
-                const playerName = jQuery(this).find('td:eq(0)').text().trim();
-                const playerLink = jQuery(this).find('td:eq(0) a').attr('href');
+                const playerName = jQuery(this)
+                    .find('td:eq(0)')
+                    .text()
+                    .trim();
+
+                const playerLink = jQuery(this)
+                    .find('td:eq(0) a')
+                    .attr('href');
+
                 const playerId = twSDK.getParameterByName(
                     'id',
                     window.location.origin + playerLink
                 );
+
                 currentFriends.push({
                     id: parseInt(playerId),
                     name: playerName,
@@ -223,12 +297,20 @@ $.getScript(
             });
 
             incomingFriendsTable.each(function () {
-                const playerName = jQuery(this).find('td:eq(0)').text().trim();
-                const playerLink = jQuery(this).find('td:eq(0) a').attr('href');
+                const playerName = jQuery(this)
+                    .find('td:eq(0)')
+                    .text()
+                    .trim();
+
+                const playerLink = jQuery(this)
+                    .find('td:eq(0) a')
+                    .attr('href');
+
                 const playerId = twSDK.getParameterByName(
                     'id',
                     window.location.origin + playerLink
                 );
+
                 currentFriends.push({
                     id: parseInt(playerId),
                     name: playerName,
